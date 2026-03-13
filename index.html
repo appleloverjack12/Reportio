@@ -3,821 +3,1004 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Meta Report Generator · kajgod.agency</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<title>Meta Report Generator · kajgod.</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #0A0A0F;
-    --surface: #111118;
-    --surface2: #1A1A24;
-    --border: #2A2A38;
-    --accent: #C8FF00;
-    --accent2: #7B5CFF;
-    --text: #F0F0F8;
-    --muted: #6B6B8A;
-    --fb: #1877F2;
-    --ig: #E1306C;
-    --li: #0A66C2;
-    --font-display: 'Syne', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-    --radius: 12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-body);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+:root {
+  --white:   #FFFFFF;
+  --off:     #F5F5F0;
+  --ink:     #0A0A0A;
+  --ink2:    #1A1A1A;
+  --muted:   #888880;
+  --border:  #E0E0D8;
+  --border2: #CACAC0;
+  --fb:      #1877F2;
+  --fb-pale: #EBF3FF;
+  --ig1:     #F58529;
+  --ig2:     #DD2A7B;
+  --ig-pale: #FFF0F5;
+  --li:      #0A66C2;
+  --yellow:  #FFE600;
+  --green:   #00C896;
+  --red:     #FF3B5C;
+  --font-h:  'Syne', sans-serif;
+  --font-b:  'DM Sans', sans-serif;
+  --r:       10px;
+  --r-lg:    18px;
+  --shadow:  0 2px 12px rgba(0,0,0,.07);
+  --shadow-md: 0 8px 32px rgba(0,0,0,.10);
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font-b);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
 
-  /* ── NOISE OVERLAY ── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none; z-index: 0; opacity: .4;
-  }
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--off); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
 
-  /* ── HEADER ── */
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 40px;
-    border-bottom: 1px solid var(--border);
-    position: relative; z-index: 10;
-  }
-  .logo {
-    font-family: var(--font-display);
-    font-weight: 800; font-size: 20px; letter-spacing: -0.5px;
-    color: var(--text);
-  }
-  .logo span { color: var(--accent); }
-  .badge {
-    background: var(--accent); color: #000;
-    font-family: var(--font-display); font-weight: 700;
-    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
-    padding: 4px 10px; border-radius: 4px;
-  }
+/* ─── TRIANGLE DECO (brand element from kajgod.agency) ─── */
+.tri {
+  width: 0; height: 0; display: inline-block; flex-shrink: 0;
+}
+.tri-down { border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid var(--ink); }
+.tri-right { border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-left: 12px solid var(--yellow); }
+.tri-accent { border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 10px solid var(--yellow); }
 
-  /* ── STEPS NAV ── */
-  .steps {
-    display: flex; gap: 0; padding: 0 40px;
-    border-bottom: 1px solid var(--border);
-    position: relative; z-index: 10;
-  }
-  .step-tab {
-    padding: 16px 28px; font-family: var(--font-display);
-    font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
-    color: var(--muted); cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all .2s; display: flex; align-items: center; gap: 8px;
-  }
-  .step-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .step-tab.done { color: var(--text); }
-  .step-num {
-    width: 20px; height: 20px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px; background: var(--border);
-  }
-  .step-tab.active .step-num { background: var(--accent); color: #000; }
-  .step-tab.done .step-num { background: var(--accent2); }
+/* ─── HEADER ─── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 64px;
+  border-bottom: 2px solid var(--ink);
+  background: var(--white);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-h); font-weight: 800; font-size: 20px;
+  letter-spacing: -1px; color: var(--ink);
+}
+.logo-badge {
+  background: var(--yellow); color: var(--ink);
+  font-size: 10px; font-weight: 700; font-family: var(--font-h);
+  text-transform: uppercase; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 4px;
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+.conn-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 500; color: var(--muted);
+  background: var(--off); border: 1px solid var(--border);
+  padding: 6px 12px; border-radius: 99px;
+}
+.conn-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+.conn-pill .dot.on { background: var(--green); box-shadow: 0 0 0 2px #00C89630; }
 
-  /* ── MAIN ── */
-  main {
-    max-width: 960px; margin: 0 auto;
-    padding: 48px 40px;
-    position: relative; z-index: 2;
-  }
-  .section-title {
-    font-family: var(--font-display);
-    font-size: 28px; font-weight: 800; letter-spacing: -1px;
-    margin-bottom: 8px;
-  }
-  .section-title span { color: var(--accent); }
-  .section-sub {
-    color: var(--muted); font-size: 14px; margin-bottom: 36px;
-    font-weight: 300;
-  }
+/* ─── SCREENS ─── */
+.screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 64px); padding: 48px 20px; }
+.screen.active { display: flex; }
+#screen-dash { align-items: stretch; justify-content: flex-start; padding: 0; }
 
-  /* ── CARDS ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 28px;
-    margin-bottom: 20px;
-  }
-  .card-title {
-    font-family: var(--font-display);
-    font-size: 14px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1px;
-    color: var(--muted); margin-bottom: 20px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .card-title::before {
-    content: ''; width: 3px; height: 14px;
-    background: var(--accent); border-radius: 2px;
-  }
+/* ─── SETUP CARD ─── */
+.setup-wrap { width: 100%; max-width: 520px; }
+.setup-eyebrow {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--muted); margin-bottom: 14px;
+}
+.setup-title {
+  font-family: var(--font-h); font-size: 38px; font-weight: 800;
+  letter-spacing: -2px; line-height: 1.0; color: var(--ink);
+  margin-bottom: 8px;
+}
+.setup-title span { color: var(--ink); position: relative; display: inline-block; }
+.setup-title span::after { content: ''; position: absolute; left: 0; bottom: 2px; width: 100%; height: 6px; background: var(--yellow); z-index: -1; }
+.setup-sub { font-size: 14px; color: var(--muted); margin-bottom: 36px; line-height: 1.6; font-weight: 300; }
 
-  /* ── FORM ── */
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-group.full { grid-column: 1/-1; }
-  label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-  input[type=text], input[type=color], select, textarea {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: 14px; padding: 12px 14px;
-    outline: none; transition: border-color .2s;
-    width: 100%;
-  }
-  input:focus, select:focus { border-color: var(--accent2); }
-  input[type=color] { height: 44px; padding: 4px 8px; cursor: pointer; }
+.box {
+  background: var(--white); border: 2px solid var(--ink);
+  border-radius: var(--r-lg); padding: 32px;
+  box-shadow: 6px 6px 0 var(--ink);
+  margin-bottom: 16px;
+}
 
-  /* ── PLATFORM TOGGLES ── */
-  .platform-row { display: flex; gap: 12px; }
-  .plat-btn {
-    flex: 1; padding: 14px; border-radius: var(--radius);
-    border: 2px solid var(--border);
-    background: var(--surface2);
-    cursor: pointer; transition: all .2s;
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    font-family: var(--font-display); font-size: 12px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
-  }
-  .plat-btn .icon { font-size: 24px; }
-  .plat-btn.active-fb { border-color: var(--fb); color: var(--fb); background: #1877f215; }
-  .plat-btn.active-ig { border-color: var(--ig); color: var(--ig); background: #e1306c15; }
-  .plat-btn.active-li { border-color: var(--li); color: var(--li); background: #0a66c215; }
+/* ─── FORM ─── */
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
+.field label {
+  display: block; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--ink2); margin-bottom: 6px;
+}
+.field input, .field select {
+  width: 100%; padding: 12px 14px;
+  background: var(--off); border: 2px solid var(--border);
+  border-radius: var(--r); color: var(--ink);
+  font-family: var(--font-b); font-size: 14px; font-weight: 400;
+  outline: none; transition: border-color .15s;
+}
+.field input:focus, .field select:focus { border-color: var(--ink); background: var(--white); }
+.field input::placeholder { color: var(--muted); }
+.hint {
+  margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.5;
+  padding: 10px 12px; background: var(--off); border-radius: var(--r);
+  border-left: 3px solid var(--yellow);
+}
+.hint a { color: var(--ink); font-weight: 600; }
+.hint code { background: var(--border); padding: 1px 4px; border-radius: 3px; font-size: 10px; }
 
-  /* ── FILE UPLOAD ZONES ── */
-  .upload-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 12px;
-  }
-  .upload-zone {
-    border: 2px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 20px 14px;
-    text-align: center; cursor: pointer;
-    transition: all .2s;
-    position: relative;
-  }
-  .upload-zone:hover { border-color: var(--accent2); background: var(--surface2); }
-  .upload-zone.loaded { border-color: var(--accent); border-style: solid; }
-  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
-  .upload-icon { font-size: 28px; margin-bottom: 8px; }
-  .upload-label {
-    font-family: var(--font-display); font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted);
-    line-height: 1.4;
-  }
-  .upload-zone.loaded .upload-label { color: var(--accent); }
-  .upload-status { font-size: 10px; color: var(--muted); margin-top: 4px; }
-  .upload-zone.loaded .upload-status { color: var(--accent); }
+/* ─── BUTTONS ─── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-h); font-weight: 700; font-size: 12px;
+  letter-spacing: .5px; text-transform: uppercase;
+  padding: 12px 22px; border-radius: var(--r);
+  border: 2px solid transparent; cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.btn:disabled { opacity: .4; cursor: not-allowed; }
 
-  /* ── PLATFORM SECTION HEADERS ── */
-  .plat-header {
-    display: flex; align-items: center; gap: 12px;
-    margin: 28px 0 16px;
-  }
-  .plat-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-  }
-  .plat-header h3 {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 700;
-  }
+.btn-ink {
+  background: var(--ink); color: var(--white); border-color: var(--ink);
+}
+.btn-ink:hover:not(:disabled) { background: var(--ink2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.2); }
 
-  /* ── KPI PREVIEW ── */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px; margin-bottom: 24px;
-  }
-  .kpi-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    position: relative; overflow: hidden;
-  }
-  .kpi-card::after {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--accent);
-  }
-  .kpi-platform { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
-  .kpi-value { font-family: var(--font-display); font-size: 26px; font-weight: 800; letter-spacing: -1px; }
-  .kpi-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.btn-yellow {
+  background: var(--yellow); color: var(--ink); border-color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.btn-yellow:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+.btn-yellow:active:not(:disabled) { transform: translate(1px,1px); box-shadow: 2px 2px 0 var(--ink); }
 
-  /* ── BUTTONS ── */
-  .btn {
-    font-family: var(--font-display);
-    font-weight: 700; font-size: 13px;
-    letter-spacing: 0.5px; text-transform: uppercase;
-    padding: 14px 28px; border-radius: 8px;
-    border: none; cursor: pointer; transition: all .2s;
-    display: inline-flex; align-items: center; gap: 8px;
-  }
-  .btn-primary {
-    background: var(--accent); color: #000;
-  }
-  .btn-primary:hover { background: #d4ff1a; transform: translateY(-1px); }
-  .btn-secondary {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-  .btn-secondary:hover { border-color: var(--accent2); }
-  .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 32px; }
+.btn-fb {
+  background: var(--fb); color: white; border-color: var(--fb);
+  width: 100%; font-size: 14px; padding: 15px 24px;
+  box-shadow: 3px 3px 0 #0d4fa0;
+}
+.btn-fb:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #0d4fa0; }
 
-  /* ── PROGRESS BAR ── */
-  .progress-bar {
-    height: 2px; background: var(--border); margin-bottom: 40px; border-radius: 2px;
-  }
-  .progress-fill {
-    height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent));
-    border-radius: 2px; transition: width .4s ease;
-  }
+.btn-outline {
+  background: var(--white); color: var(--ink); border-color: var(--border2);
+}
+.btn-outline:hover:not(:disabled) { border-color: var(--ink); }
 
-  /* ── REPORT PREVIEW ── */
-  #report-preview {
-    background: white;
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: 0 24px 80px rgba(0,0,0,.5);
-  }
-  .report-cover {
-    background: #0A0A0F;
-    padding: 60px 48px;
-    position: relative; overflow: hidden;
-  }
-  .report-cover::before {
-    content: '';
-    position: absolute; top: -60px; right: -60px;
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, #C8FF0020 0%, transparent 70%);
-    border-radius: 50%;
-  }
-  .cover-agency {
-    font-family: var(--font-display); font-size: 12px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 3px;
-    color: var(--accent); margin-bottom: 32px;
-  }
-  .cover-title {
-    font-family: var(--font-display); font-size: 42px; font-weight: 800;
-    letter-spacing: -2px; line-height: 1.05; color: white;
-    margin-bottom: 12px;
-  }
-  .cover-client { font-size: 16px; color: #888; margin-bottom: 8px; font-weight: 300; }
-  .cover-period { font-size: 14px; color: #555; }
-  .cover-platforms {
-    display: flex; gap: 8px; margin-top: 40px;
-  }
-  .cover-plat-tag {
-    padding: 6px 14px; border-radius: 20px; font-size: 11px;
-    font-family: var(--font-display); font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1px;
-  }
-  .report-body { background: #F8F9FC; padding: 48px; }
-  .rep-section-title {
-    font-family: var(--font-display); font-size: 18px; font-weight: 800;
-    letter-spacing: -0.5px; color: #0A0A0F;
-    border-left: 3px solid #C8FF00; padding-left: 12px;
-    margin-bottom: 20px; margin-top: 32px;
-  }
-  .rep-kpi-row {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-    margin-bottom: 28px;
-  }
-  .rep-kpi {
-    background: white; border-radius: 10px;
-    padding: 18px; border: 1px solid #E8ECF4;
-  }
-  .rep-kpi-plat { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #9BA0B0; margin-bottom: 4px; }
-  .rep-kpi-val { font-family: var(--font-display); font-size: 24px; font-weight: 800; letter-spacing: -1px; color: #0A0A0F; }
-  .rep-kpi-lbl { font-size: 11px; color: #9BA0B0; margin-top: 3px; }
-  .rep-chart-container { background: white; border-radius: 10px; padding: 20px; border: 1px solid #E8ECF4; margin-bottom: 20px; }
-  .rep-chart-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: #0A0A0F; margin-bottom: 14px; }
-  .insight-block {
-    background: white; border-radius: 10px; padding: 16px 20px;
-    border-left: 3px solid #7B5CFF;
-    margin-bottom: 10px;
-    display: flex; gap: 14px; align-items: flex-start;
-  }
-  .insight-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-  .insight-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: #0A0A0F; margin-bottom: 2px; }
-  .insight-body { font-size: 12px; color: #555; line-height: 1.5; }
+.btn-full { width: 100%; }
+.btn-sm { padding: 8px 14px; font-size: 11px; }
 
-  /* ── TOASTS ── */
-  .toast {
-    position: fixed; bottom: 24px; right: 24px;
-    background: var(--surface); border: 1px solid var(--accent);
-    color: var(--text); padding: 12px 20px; border-radius: 8px;
-    font-size: 13px; z-index: 1000;
-    animation: slideIn .3s ease;
-  }
-  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } }
+/* ─── GUIDE STEPS ─── */
+.guide { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; }
+.guide-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; background: var(--off);
+  border: 1px solid var(--border); border-radius: var(--r);
+}
+.guide-n {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ink); color: var(--yellow);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-h); font-size: 10px; font-weight: 800;
+  flex-shrink: 0; margin-top: 1px;
+}
+.guide-t { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.guide-t strong { color: var(--ink); }
 
-  /* ── STEP PANELS ── */
-  .step-panel { display: none; }
-  .step-panel.active { display: block; }
+/* ─── ERROR ─── */
+.err-box {
+  display: none; margin-top: 12px; padding: 10px 14px;
+  background: #FFF0F2; border: 1px solid #FFCCD4;
+  border-radius: var(--r); font-size: 12px; color: var(--red);
+}
+.err-box.show { display: block; }
 
-  /* ── COLOR ROW ── */
-  .color-row { display: flex; gap: 12px; }
-  .color-swatch {
-    display: flex; flex-direction: column; gap: 6px; align-items: center;
-    flex: 1;
-  }
-  .color-swatch label { font-size: 11px; }
+/* ─── DASHBOARD ─── */
+.dash { max-width: 1120px; width: 100%; margin: 0 auto; padding: 36px 32px; }
 
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.dash-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 32px; gap: 16px; flex-wrap: wrap;
+  padding-bottom: 24px; border-bottom: 2px solid var(--ink);
+}
+.dash-title {
+  font-family: var(--font-h); font-size: 26px; font-weight: 800;
+  letter-spacing: -1px; color: var(--ink);
+}
+.dash-sub { font-size: 13px; color: var(--muted); margin-top: 3px; font-weight: 300; }
+.dash-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.dash-controls select {
+  background: var(--white); border: 2px solid var(--border2);
+  color: var(--ink); font-family: var(--font-b); font-size: 13px; font-weight: 500;
+  padding: 9px 14px; border-radius: var(--r); outline: none; cursor: pointer;
+  transition: border-color .15s;
+}
+.dash-controls select:focus { border-color: var(--ink); }
 
-  @media print {
-    body { background: white; }
-    header, .steps, .btn-row, .step-panel:not(.active) { display: none !important; }
-    #report-preview { box-shadow: none; }
-  }
+/* ─── SECTION LABEL ─── */
+.sec-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--muted); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sec-label::before { content: ''; display: block; width: 10px; height: 2px; background: var(--yellow); }
+
+/* ─── PILLS ─── */
+.pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+.pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: 99px; padding: 6px 16px 6px 8px;
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.pill:hover { border-color: var(--ink); }
+.pill.active { border-color: var(--ink); background: var(--yellow); box-shadow: 2px 2px 0 var(--ink); }
+.pill img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+.pill-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--border); }
+.pill-plat { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.pill.active .pill-plat { color: var(--ink); }
+
+/* ─── KPI STRIP ─── */
+.kpi-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.kpi-card {
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: var(--r-lg); padding: 20px 18px;
+  position: relative; transition: border-color .15s, transform .15s, box-shadow .15s;
+}
+.kpi-card:hover { border-color: var(--ink); transform: translateY(-2px); box-shadow: 3px 3px 0 var(--ink); }
+.kpi-card.fb { border-top: 3px solid var(--fb); }
+.kpi-card.ig { border-top: 3px solid var(--ig2); }
+.kpi-plat {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 5px;
+}
+.kpi-plat.fb { color: var(--fb); }
+.kpi-plat.ig { color: var(--ig2); }
+.kpi-value {
+  font-family: var(--font-h); font-size: 30px; font-weight: 800;
+  letter-spacing: -1.5px; line-height: 1; color: var(--ink); margin-bottom: 4px;
+}
+.kpi-label { font-size: 11px; color: var(--muted); font-weight: 400; }
+.kpi-demo { font-size: 9px; color: var(--muted); margin-top: 6px; padding: 2px 6px; background: var(--off); border-radius: 4px; display: inline-block; }
+
+/* ─── CHARTS ─── */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+.chart-card {
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: var(--r-lg); padding: 22px;
+  transition: border-color .15s;
+}
+.chart-card:hover { border-color: var(--border2); }
+.chart-card.span2 { grid-column: span 2; }
+.chart-head { margin-bottom: 16px; }
+.chart-title { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.chart-sub { font-size: 11px; color: var(--muted); }
+
+/* ─── LOADING ─── */
+.loader {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(255,255,255,.95); backdrop-filter: blur(4px);
+  display: none; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+}
+.loader.show { display: flex; }
+.spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid var(--border); border-top-color: var(--ink);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-title { font-family: var(--font-h); font-size: 18px; font-weight: 800; letter-spacing: -.5px; color: var(--ink); }
+.loader-prog { width: 240px; height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.loader-fill { height: 100%; background: var(--ink); border-radius: 99px; transition: width .35s ease; }
+.loader-steps { display: flex; flex-direction: column; gap: 6px; width: 240px; }
+.lstep { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); transition: color .2s; }
+.lstep.active { color: var(--ink); font-weight: 600; }
+.lstep.done { color: var(--green); }
+.lstep-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; transition: all .2s; }
+.lstep.done .lstep-dot { background: var(--green); border-color: var(--green); }
+.lstep.active .lstep-dot { border-color: var(--ink); animation: spin .7s linear infinite; }
+
+/* ─── MODAL ─── */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(10,10,10,.6); backdrop-filter: blur(6px);
+  display: none; align-items: flex-start; justify-content: center;
+  overflow-y: auto; padding: 32px 16px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  width: 100%; max-width: 820px; margin: auto;
+  background: var(--white); border: 2px solid var(--ink);
+  border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: 8px 8px 0 var(--ink);
+  animation: modalIn .25s cubic-bezier(.16,1,.3,1);
+}
+@keyframes modalIn { from { opacity:0; transform: translateY(16px); } }
+.modal-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px; background: var(--ink); border-bottom: 2px solid var(--ink);
+  position: sticky; top: 0; z-index: 10;
+}
+.modal-bar-title { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: var(--white); letter-spacing: .5px; text-transform: uppercase; }
+.modal-bar-btns { display: flex; gap: 8px; }
+
+/* ─── REPORT CONTENT ─── */
+.rep-cover {
+  padding: 60px 52px 48px; position: relative; overflow: hidden;
+}
+.rep-cover-noise {
+  position: absolute; inset: 0; opacity: .03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* decorative triangle echoing kajgod brand */
+.rep-cover-tri {
+  position: absolute; top: 0; right: 0;
+  width: 0; height: 0;
+  border-left: 160px solid transparent;
+  border-top: 160px solid var(--yellow);
+  opacity: 1;
+}
+.rep-eyebrow {
+  font-family: var(--font-h); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 3px;
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+}
+.rep-cover-title {
+  font-family: var(--font-h); font-size: 44px; font-weight: 800;
+  letter-spacing: -2.5px; line-height: 1.0; margin-bottom: 14px;
+}
+.rep-cover-client { font-size: 15px; margin-bottom: 4px; }
+.rep-cover-period { font-size: 13px; }
+.rep-plat-tags { display: flex; gap: 8px; margin-top: 32px; flex-wrap: wrap; }
+.rep-plat-tag {
+  padding: 5px 14px; border-radius: 99px; font-size: 11px;
+  font-family: var(--font-h); font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  border: 2px solid;
+}
+
+.rep-divider { height: 2px; background: var(--ink); margin: 0; }
+.rep-body { padding: 44px 52px; background: var(--off); }
+.rep-h1 {
+  font-family: var(--font-h); font-size: 19px; font-weight: 800;
+  letter-spacing: -.5px; color: var(--ink);
+  padding-left: 13px; margin-bottom: 18px; margin-top: 36px;
+}
+.rep-h1:first-child { margin-top: 0; }
+.rep-summary {
+  font-size: 13px; color: #444; line-height: 1.7;
+  background: var(--white); border-radius: var(--r); padding: 18px 20px;
+  border: 1px solid var(--border); margin-bottom: 24px;
+}
+.rep-kpi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 22px; }
+.rep-kpi {
+  background: var(--white); border-radius: var(--r); padding: 16px;
+  border: 1px solid var(--border); position: relative; overflow: hidden;
+}
+.rep-kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.rep-kpi.fb::before { background: var(--fb); }
+.rep-kpi.ig::before { background: linear-gradient(90deg, var(--ig1), var(--ig2)); }
+.rep-kpi-plat { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: #9BA0B0; margin-bottom: 3px; font-weight: 600; }
+.rep-kpi-val { font-family: var(--font-h); font-size: 24px; font-weight: 800; letter-spacing: -1px; color: var(--ink); }
+.rep-kpi-lbl { font-size: 11px; color: #9BA0B0; margin-top: 1px; }
+.rep-insight {
+  background: var(--white); border-radius: var(--r); padding: 14px 18px;
+  border: 1px solid var(--border); display: flex; gap: 13px;
+  align-items: flex-start; margin-bottom: 9px;
+}
+.rep-insight-left { flex-shrink: 0; width: 28px; height: 28px; border-radius: 6px; background: var(--yellow); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.rep-insight-title { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: var(--ink); }
+.rep-insight-body { font-size: 12px; color: #555; line-height: 1.6; margin-top: 2px; }
+.rep-footer {
+  padding: 20px 52px; background: var(--ink);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.rep-footer-note { font-size: 11px; color: #666; }
+.rep-footer-brand { font-family: var(--font-h); font-size: 14px; font-weight: 800; color: var(--white); letter-spacing: -0.5px; }
+.rep-footer-brand span { color: var(--yellow); }
+
+/* ─── DEMO WARN ─── */
+.demo-warn {
+  font-size:11px; color: #92400e; margin-bottom:14px;
+  padding:8px 12px; background:#FFFBEB; border-radius:6px; border:1px solid #FDE68A;
+  display: flex; gap: 6px; align-items: center;
+}
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 999;
+  background: var(--ink); color: var(--white);
+  padding: 12px 18px; border-radius: var(--r); font-size: 13px; font-weight: 500;
+  animation: toastIn .25s ease; display: flex; align-items: center; gap: 8px;
+  box-shadow: var(--shadow-md); border: 2px solid var(--ink);
+}
+.toast.ok { background: var(--green); color: var(--ink); }
+.toast.err { background: var(--red); }
+@keyframes toastIn { from { transform: translateX(20px); opacity: 0; } }
+
+/* ─── DIVIDER ─── */
+.divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+/* ─── PRINT ─── */
+@media print {
+  body * { visibility: hidden; }
+  .modal, .modal * { visibility: visible; }
+  .modal { position: absolute; top:0; left:0; width:100%; box-shadow:none; border:none; border-radius:0; }
+  .modal-bar { display: none; }
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 720px) {
+  header { padding: 0 16px; }
+  .dash { padding: 20px 16px; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-card.span2 { grid-column: span 1; }
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .rep-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .rep-cover, .rep-body, .rep-footer { padding-left: 24px; padding-right: 24px; }
+  .setup-title { font-size: 28px; }
+}
 </style>
 </head>
 <body>
 
+<!-- ─── HEADER ─────────────────────────────────────────────────── -->
 <header>
-  <div class="logo">kajgod<span>.</span>agency</div>
-  <div class="badge">Report Generator</div>
+  <div class="logo">
+    kajgod.
+    <div class="logo-badge">Reports</div>
+  </div>
+  <div class="header-right">
+    <div class="conn-pill">
+      <div class="dot" id="s-dot"></div>
+      <span id="s-label">Not connected</span>
+    </div>
+    <button class="btn btn-outline btn-sm" id="btn-out" style="display:none" onclick="logout()">Logout</button>
+  </div>
 </header>
 
-<div class="steps">
-  <div class="step-tab active" id="tab-1" onclick="goStep(1)">
-    <span class="step-num">1</span> Configure
-  </div>
-  <div class="step-tab" id="tab-2" onclick="goStep(2)">
-    <span class="step-num">2</span> Upload Data
-  </div>
-  <div class="step-tab" id="tab-3" onclick="goStep(3)">
-    <span class="step-num">3</span> Preview & Export
+<!-- ─── SCREEN: SETUP ──────────────────────────────────────────── -->
+<div class="screen active" id="screen-setup">
+  <div class="setup-wrap">
+    <div class="setup-eyebrow"><div class="tri tri-accent"></div> Meta Report Generator</div>
+    <div class="setup-title">Connect your<br><span>Meta</span> account.</div>
+    <div class="setup-sub">Enter your Meta App ID to pull live data from Facebook & Instagram. Everything runs in your browser — nothing is stored anywhere.</div>
+
+    <div class="box">
+      <div class="field">
+        <label>Meta App ID</label>
+        <input id="appId" type="text" placeholder="e.g. 1234567890123456"/>
+        <div class="hint">
+          Get your App ID at <a href="https://developers.facebook.com/apps" target="_blank">developers.facebook.com/apps</a>.
+          Add <code>Facebook Login</code> and set your site URL as the OAuth redirect URI.
+        </div>
+      </div>
+      <div class="field">
+        <label>Agency Name</label>
+        <input id="agencyName" type="text" value="kajgod." placeholder="kajgod."/>
+      </div>
+      <button class="btn btn-yellow btn-full" onclick="initSDK()" style="margin-top:8px">
+        Connect & Continue →
+      </button>
+      <div id="setup-err" class="err-box"></div>
+    </div>
+
+    <div class="guide">
+      <div class="guide-item"><div class="guide-n">1</div><div class="guide-t"><strong>Create a Meta App</strong> at developers.facebook.com → My Apps → Create App → Business type.</div></div>
+      <div class="guide-item"><div class="guide-n">2</div><div class="guide-t"><strong>Add Facebook Login</strong>, set Valid OAuth Redirect URIs to your GitHub Pages URL.</div></div>
+      <div class="guide-item"><div class="guide-n">3</div><div class="guide-t"><strong>Request permissions:</strong> <code>pages_show_list</code>, <code>read_insights</code>, <code>pages_read_engagement</code>, <code>instagram_basic</code>, <code>instagram_manage_insights</code>.</div></div>
+      <div class="guide-item"><div class="guide-n">4</div><div class="guide-t"><strong>Paste your App ID above.</strong> Client logs in once — the app pulls data automatically every month.</div></div>
+    </div>
   </div>
 </div>
 
-<main>
-  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:33%"></div></div>
-
-  <!-- ── STEP 1: CONFIGURE ── -->
-  <div class="step-panel active" id="step-1">
-    <div class="section-title">Configure <span>Report</span></div>
-    <p class="section-sub">Set up the client details, reporting period, and brand style.</p>
-
-    <div class="card">
-      <div class="card-title">Client Information</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Client Name</label>
-          <input type="text" id="clientName" placeholder="e.g. Acme Brand d.o.o." />
-        </div>
-        <div class="form-group">
-          <label>Reporting Period</label>
-          <input type="text" id="reportPeriod" placeholder="e.g. February 2025" />
-        </div>
-        <div class="form-group">
-          <label>Prepared By</label>
-          <input type="text" id="preparedBy" value="kajgod.agency" />
-        </div>
-        <div class="form-group">
-          <label>Report Language</label>
-          <select id="reportLang">
-            <option>English</option>
-            <option>Croatian</option>
-            <option>German</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Platforms</div>
-      <div class="platform-row">
-        <div class="plat-btn" id="btn-fb" onclick="togglePlatform('fb')">
-          <span class="icon">📘</span> Facebook
-        </div>
-        <div class="plat-btn" id="btn-ig" onclick="togglePlatform('ig')">
-          <span class="icon">📸</span> Instagram
-        </div>
-        <div class="plat-btn" id="btn-li" onclick="togglePlatform('li')">
-          <span class="icon">💼</span> LinkedIn
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Brand Colours</div>
-      <div class="color-row">
-        <div class="color-swatch">
-          <label>Primary</label>
-          <input type="color" id="colorPrimary" value="#C8FF00" />
-        </div>
-        <div class="color-swatch">
-          <label>Accent</label>
-          <input type="color" id="colorAccent" value="#7B5CFF" />
-        </div>
-        <div class="color-swatch">
-          <label>Dark BG</label>
-          <input type="color" id="colorBg" value="#0A0A0F" />
-        </div>
-        <div class="color-swatch">
-          <label>Text</label>
-          <input type="color" id="colorText" value="#F0F0F8" />
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Executive Summary</div>
-      <div class="form-grid">
-        <div class="form-group full">
-          <label>Custom Summary Note (optional)</label>
-          <textarea id="summaryNote" rows="3" style="resize:vertical" placeholder="Add a custom note for the client, e.g. highlights, context, or strategic observations..."></textarea>
-        </div>
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <span></span>
-      <button class="btn btn-primary" onclick="goStep(2)">Upload Data →</button>
+<!-- ─── SCREEN: LOGIN ──────────────────────────────────────────── -->
+<div class="screen" id="screen-login">
+  <div class="setup-wrap">
+    <div class="setup-eyebrow"><div class="tri tri-accent"></div> Step 2 of 2</div>
+    <div class="setup-title">Login with<br><span>Facebook</span>.</div>
+    <div class="setup-sub">Log in with the Facebook account that manages the pages you want to report on. Read-only access only.</div>
+    <div class="box">
+      <button class="btn btn-fb" onclick="doLogin()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.971h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+        Continue with Facebook
+      </button>
+      <div id="login-err" class="err-box"></div>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px">Read-only access · Page Insights · Instagram Insights</p>
     </div>
   </div>
+</div>
 
-  <!-- ── STEP 2: UPLOAD DATA ── -->
-  <div class="step-panel" id="step-2">
-    <div class="section-title">Upload <span>Data</span></div>
-    <p class="section-sub">Upload the exported .xlsx files from Meta Business Suite. Each file is optional — upload what you have.</p>
+<!-- ─── SCREEN: DASHBOARD ──────────────────────────────────────── -->
+<div class="screen" id="screen-dash">
+  <div class="dash">
 
-    <div id="upload-sections"></div>
-
-    <div class="btn-row">
-      <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
-      <button class="btn btn-primary" onclick="goStep(3)">Generate Report →</button>
-    </div>
-  </div>
-
-  <!-- ── STEP 3: PREVIEW & EXPORT ── -->
-  <div class="step-panel" id="step-3">
-    <div class="section-title">Preview & <span>Export</span></div>
-    <p class="section-sub">Your report is ready. Review it below and download as PDF.</p>
-
-    <div class="btn-row" style="margin-top: 0; margin-bottom: 24px;">
-      <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
-      <div style="display:flex;gap:12px;">
-        <button class="btn btn-secondary" onclick="window.print()">🖨 Print</button>
-        <button class="btn btn-primary" onclick="downloadPDF()">⬇ Download PDF</button>
-      </div>
-    </div>
-
-    <div id="report-preview"></div>
-  </div>
-</main>
-
-<script>
-// ── STATE ──────────────────────────────────────────────────────────────────────
-const state = {
-  platforms: new Set(),
-  data: {
-    fb: {}, ig: {}, li: {}
-  },
-  config: {}
-};
-
-const PLATFORM_CONFIG = {
-  fb: { name: 'Facebook',  color: '#1877F2', emoji: '📘' },
-  ig: { name: 'Instagram', color: '#E1306C', emoji: '📸' },
-  li: { name: 'LinkedIn',  color: '#0A66C2', emoji: '💼' },
-};
-
-const METRICS = [
-  { key: 'views',       label: 'Views',              icon: '👁' },
-  { key: 'reach',       label: 'Reach',              icon: '📡' },
-  { key: 'interactions',label: 'Interactions',       icon: '💬' },
-  { key: 'follows',     label: 'Follows',            icon: '➕' },
-  { key: 'link_clicks', label: 'Link Clicks',        icon: '🔗' },
-  { key: 'visitors',    label: 'Viewers / Visitors', icon: '👤' },
-  { key: 'audience',    label: 'Audience',           icon: '🎯' },
-  { key: 'top_formats', label: 'Top Content Formats',icon: '📊' },
-];
-
-// ── STEP NAVIGATION ───────────────────────────────────────────────────────────
-let currentStep = 1;
-function goStep(n) {
-  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.step-tab').forEach((t, i) => {
-    t.classList.remove('active');
-    if (i+1 < n) t.classList.add('done');
-    else t.classList.remove('done');
-  });
-  document.getElementById(`step-${n}`).classList.add('active');
-  document.getElementById(`tab-${n}`).classList.add('active');
-  document.getElementById('progress').style.width = `${(n/3)*100}%`;
-  currentStep = n;
-
-  if (n === 2) buildUploadSections();
-  if (n === 3) buildReport();
-}
-
-// ── PLATFORM TOGGLES ──────────────────────────────────────────────────────────
-function togglePlatform(p) {
-  const btn = document.getElementById(`btn-${p}`);
-  if (state.platforms.has(p)) {
-    state.platforms.delete(p);
-    btn.className = 'plat-btn';
-  } else {
-    state.platforms.add(p);
-    btn.className = `plat-btn active-${p}`;
-  }
-}
-
-// ── BUILD UPLOAD SECTIONS ─────────────────────────────────────────────────────
-function buildUploadSections() {
-  const container = document.getElementById('upload-sections');
-  if (state.platforms.size === 0) {
-    container.innerHTML = `<div class="card" style="text-align:center;color:var(--muted);padding:40px">← Go back and select at least one platform</div>`;
-    return;
-  }
-  let html = '';
-  state.platforms.forEach(p => {
-    const cfg = PLATFORM_CONFIG[p];
-    html += `
-      <div class="card">
-        <div class="plat-header">
-          <div class="plat-dot" style="background:${cfg.color}"></div>
-          <h3>${cfg.emoji} ${cfg.name}</h3>
-        </div>
-        <div class="upload-grid">
-          ${METRICS.map(m => `
-            <div class="upload-zone" id="zone-${p}-${m.key}">
-              <input type="file" accept=".xlsx,.csv" onchange="handleFile(event,'${p}','${m.key}')"/>
-              <div class="upload-icon">${m.icon}</div>
-              <div class="upload-label">${m.label}</div>
-              <div class="upload-status" id="status-${p}-${m.key}">Drop file here</div>
-            </div>
-          `).join('')}
-        </div>
-      </div>`;
-  });
-  container.innerHTML = html;
-}
-
-// ── FILE HANDLING ─────────────────────────────────────────────────────────────
-function handleFile(event, platform, metric) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const zone = document.getElementById(`zone-${platform}-${metric}`);
-  const status = document.getElementById(`status-${platform}-${metric}`);
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      if (!state.data[platform]) state.data[platform] = {};
-      state.data[platform][metric] = rows;
-      zone.classList.add('loaded');
-      status.textContent = `✓ ${rows.length - 1} rows`;
-      showToast(`Loaded ${PLATFORM_CONFIG[platform].name} ${metric}`);
-    } catch(err) {
-      status.textContent = 'Error reading file';
-      console.error(err);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function showToast(msg) {
-  const t = document.createElement('div');
-  t.className = 'toast'; t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2500);
-}
-
-// ── KPI EXTRACTION ────────────────────────────────────────────────────────────
-function extractKPIs() {
-  const kpis = {};
-  state.platforms.forEach(p => {
-    kpis[p] = {};
-    const d = state.data[p] || {};
-
-    // Views
-    if (d.views && d.views.length > 1) {
-      const col = d.views[0].findIndex(h => h && h.toString().toLowerCase().includes('view'));
-      const total = d.views.slice(1).reduce((s, r) => s + (parseFloat(r[col > -1 ? col : 1]) || 0), 0);
-      kpis[p].views = total;
-    } else kpis[p].views = Math.floor(Math.random() * 50000 + 5000);
-
-    // Reach
-    if (d.reach && d.reach.length > 1) {
-      const col = d.reach[0].findIndex(h => h && h.toString().toLowerCase().includes('reach'));
-      const total = d.reach.slice(1).reduce((s, r) => s + (parseFloat(r[col > -1 ? col : 1]) || 0), 0);
-      kpis[p].reach = total;
-    } else kpis[p].reach = Math.floor(Math.random() * 80000 + 10000);
-
-    // Interactions
-    if (d.interactions && d.interactions.length > 1) {
-      const col = d.interactions[0].findIndex(h => h && h.toString().toLowerCase().includes('interaction'));
-      const total = d.interactions.slice(1).reduce((s, r) => s + (parseFloat(r[col > -1 ? col : 1]) || 0), 0);
-      kpis[p].interactions = total;
-    } else kpis[p].interactions = Math.floor(Math.random() * 5000 + 500);
-
-    // Follows
-    if (d.follows && d.follows.length > 1) {
-      const col = d.follows[0].findIndex(h => h && (h.toString().toLowerCase().includes('follow') || h.toString().toLowerCase().includes('new')));
-      const total = d.follows.slice(1).reduce((s, r) => s + (parseFloat(r[col > -1 ? col : 1]) || 0), 0);
-      kpis[p].follows = total;
-    } else kpis[p].follows = Math.floor(Math.random() * 800 + 50);
-
-    // Link clicks
-    if (d.link_clicks && d.link_clicks.length > 1) {
-      const col = d.link_clicks[0].findIndex(h => h && h.toString().toLowerCase().includes('click'));
-      const total = d.link_clicks.slice(1).reduce((s, r) => s + (parseFloat(r[col > -1 ? col : 1]) || 0), 0);
-      kpis[p].link_clicks = total;
-    } else kpis[p].link_clicks = Math.floor(Math.random() * 2000 + 200);
-
-    // Visitors
-    if (d.visitors && d.visitors.length > 1) {
-      const col = d.visitors[0].findIndex(h => h && (h.toString().toLowerCase().includes('visitor') || h.toString().toLowerCase().includes('viewer')));
-      const total = d.visitors.slice(1).reduce((s, r) => s + (parseFloat(r[col > -1 ? col : 1]) || 0), 0);
-      kpis[p].visitors = total;
-    } else kpis[p].visitors = Math.floor(Math.random() * 15000 + 1000);
-  });
-  return kpis;
-}
-
-function fmtNum(n) {
-  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-  if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
-  return Math.round(n).toString();
-}
-
-// ── BUILD REPORT ──────────────────────────────────────────────────────────────
-function buildReport() {
-  const clientName  = document.getElementById('clientName').value  || 'Your Client';
-  const period      = document.getElementById('reportPeriod').value || 'Monthly Report';
-  const preparedBy  = document.getElementById('preparedBy').value  || 'kajgod.agency';
-  const summaryNote = document.getElementById('summaryNote').value;
-  const primary     = document.getElementById('colorPrimary').value;
-  const accent      = document.getElementById('colorAccent').value;
-  const bgColor     = document.getElementById('colorBg').value;
-
-  const kpis    = extractKPIs();
-  const platArr = [...state.platforms];
-
-  // Platform tags HTML
-  const platTags = platArr.map(p => {
-    const cfg = PLATFORM_CONFIG[p];
-    return `<span class="cover-plat-tag" style="background:${cfg.color}20;color:${cfg.color};border:1px solid ${cfg.color}40">${cfg.emoji} ${cfg.name}</span>`;
-  }).join('');
-
-  // KPI cards HTML for each platform
-  let kpiSections = '';
-  platArr.forEach(p => {
-    const cfg = PLATFORM_CONFIG[p];
-    const k = kpis[p];
-    kpiSections += `
-      <div class="rep-section-title" style="border-color:${cfg.color}">${cfg.emoji} ${cfg.name} — Key Metrics</div>
-      <div class="rep-kpi-row">
-        ${[
-          ['Views',       fmtNum(k.views)],
-          ['Reach',       fmtNum(k.reach)],
-          ['Interactions',fmtNum(k.interactions)],
-          ['New Followers',fmtNum(k.follows)],
-          ['Link Clicks', fmtNum(k.link_clicks)],
-          ['Visitors',    fmtNum(k.visitors)],
-        ].map(([lbl, val]) => `
-          <div class="rep-kpi" style="border-top:2px solid ${cfg.color}">
-            <div class="rep-kpi-plat">${cfg.name}</div>
-            <div class="rep-kpi-val">${val}</div>
-            <div class="rep-kpi-lbl">${lbl}</div>
-          </div>`).join('')}
-      </div>
-      <div class="rep-chart-container">
-        <div class="rep-chart-title">Daily Activity — ${cfg.name}</div>
-        <canvas id="chart-${p}" height="120"></canvas>
-      </div>`;
-  });
-
-  // Combined total
-  let totalReach = 0, totalInter = 0, totalFollows = 0;
-  platArr.forEach(p => { totalReach += kpis[p].reach; totalInter += kpis[p].interactions; totalFollows += kpis[p].follows; });
-
-  // Insights
-  const insights = [
-    { icon: '📈', title: 'Reach Performance', body: `Combined reach across all platforms reached ${fmtNum(totalReach)} this month. Continue consistent posting to maintain momentum.` },
-    { icon: '💬', title: 'Engagement Quality', body: `Total of ${fmtNum(totalInter)} interactions recorded. Video content and carousel posts tend to outperform static images — prioritise these formats.` },
-    { icon: '👥', title: 'Audience Growth', body: `${fmtNum(totalFollows)} new followers gained across platforms. Engage new followers with welcome-style content in the first 48h.` },
-    { icon: '🔗', title: 'Link Click Optimisation', body: `Test placing CTAs in the first comment rather than the caption to improve link click rates on organic posts.` },
-    { icon: '🎯', title: 'Content Strategy', body: `Based on this month's data, double down on top-performing formats. Use retargeting audiences built from page visitors.` },
-  ];
-
-  const insightsHtml = insights.map(i => `
-    <div class="insight-block" style="border-left-color:${accent}">
-      <div class="insight-icon">${i.icon}</div>
+    <!-- top bar -->
+    <div class="dash-top">
       <div>
-        <div class="insight-title">${i.title}</div>
-        <div class="insight-body">${i.body}</div>
+        <div class="dash-title">Report Builder</div>
+        <div class="dash-sub">Select an account, choose a month, generate your report.</div>
       </div>
-    </div>`).join('');
-
-  document.getElementById('report-preview').innerHTML = `
-    <div class="report-cover" style="background:${bgColor}">
-      <div class="cover-agency" style="color:${primary}">${preparedBy}</div>
-      <div class="cover-title" style="color:white">Social Media<br>Monthly Report</div>
-      <div class="cover-client" style="color:#aaa">Prepared for: <strong style="color:white">${clientName}</strong></div>
-      <div class="cover-period" style="color:#666">${period}</div>
-      <div class="cover-platforms">${platTags}</div>
+      <div class="dash-controls">
+        <select id="month-sel" onchange="onMonthChange()"></select>
+        <button class="btn btn-outline btn-sm" onclick="reloadAccounts()">↻ Refresh</button>
+        <button class="btn btn-yellow" onclick="generateReport()">
+          Generate Report →
+        </button>
+      </div>
     </div>
-    <div class="report-body">
-      <div class="rep-section-title" style="border-color:${primary}">Executive Summary</div>
-      <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:${summaryNote ? '12px' : '0'}">
-        This report covers social media performance for <strong>${clientName}</strong> during <strong>${period}</strong>, 
-        across ${platArr.map(p => PLATFORM_CONFIG[p].name).join(', ')}. 
-        The data reflects organic and paid activity combined, sourced directly from Meta Business Suite exports.
-      </p>
-      ${summaryNote ? `<p style="font-size:13px;color:#555;line-height:1.7;padding:14px;background:#F0F2F8;border-radius:8px;border-left:3px solid ${accent}">${summaryNote}</p>` : ''}
 
-      ${kpiSections}
+    <!-- accounts -->
+    <div class="sec-label">Accounts</div>
+    <div class="pills" id="pills">
+      <span style="color:var(--muted);font-size:13px">Loading accounts…</span>
+    </div>
 
-      <div class="rep-section-title" style="border-color:${primary};margin-top:36px">Insights & Recommendations</div>
-      ${insightsHtml}
+    <!-- KPIs -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="sec-label" style="margin:0">Key Metrics</div>
+      <div style="font-size:11px;color:var(--muted);font-weight:500" id="kpi-period"></div>
+    </div>
+    <div class="kpi-strip" id="kpi-strip">
+      <div class="kpi-card" style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px;border-style:dashed">
+        Select an account above and click <strong>Generate Report</strong>
+      </div>
+    </div>
 
-      <div style="margin-top:40px;padding-top:20px;border-top:1px solid #E8ECF4;display:flex;justify-content:space-between;align-items:center">
-        <div style="font-size:11px;color:#BBB">Data sourced from Meta Business Suite. Report generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'})}.</div>
-        <div style="font-family:var(--font-display);font-size:13px;font-weight:800;color:#0A0A0F">${preparedBy}</div>
+    <!-- charts -->
+    <div class="chart-grid" id="chart-grid" style="display:none">
+      <div class="chart-card span2">
+        <div class="chart-head">
+          <div class="chart-title">Reach Over Time</div>
+          <div class="chart-sub">Daily unique accounts reached — Facebook & Instagram</div>
+        </div>
+        <canvas id="c-reach" height="85"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-title">Facebook Breakdown</div>
+          <div class="chart-sub">Engagements by type</div>
+        </div>
+        <canvas id="c-breakdown" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-title">Follower Growth</div>
+          <div class="chart-sub">New followers per day</div>
+        </div>
+        <canvas id="c-follows" height="160"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── LOADING ────────────────────────────────────────────────── -->
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-title" id="loader-title">Fetching data…</div>
+  <div class="loader-prog"><div class="loader-fill" id="loader-fill" style="width:0%"></div></div>
+  <div class="loader-steps" id="loader-steps"></div>
+</div>
+
+<!-- ─── REPORT MODAL ───────────────────────────────────────────── -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-bar">
+      <span class="modal-bar-title">📄 Report Preview</span>
+      <div class="modal-bar-btns">
+        <button class="btn btn-outline btn-sm" style="color:white;border-color:#444" onclick="closeModal()">✕ Close</button>
+        <button class="btn btn-outline btn-sm" style="color:white;border-color:#444" onclick="window.print()">🖨 Print</button>
+        <button class="btn btn-yellow btn-sm" onclick="window.print()">⬇ Save PDF</button>
+      </div>
+    </div>
+    <div id="report-html"></div>
+  </div>
+</div>
+
+<!-- ─── SCRIPTS ────────────────────────────────────────────────── -->
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────
+const G = {
+  appId:'', agency:'kajgod.', token:null,
+  pages:[], igMap:{}, selected:new Set(),
+  metrics:{}, charts:{}, months:[]
+};
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+const q   = id => document.getElementById(id);
+const fmt = n  => n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':Math.round(n).toLocaleString();
+
+function toast(msg, type='') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+function showErr(id, msg) {
+  const e = q(id); e.textContent = msg; e.classList.add('show');
+  setTimeout(() => e.classList.remove('show'), 6000);
+}
+function screen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  q(`screen-${id}`).classList.add('active');
+}
+function loading(title, steps) {
+  q('loader-title').textContent = title;
+  q('loader-steps').innerHTML = steps.map((s,i) =>
+    `<div class="lstep" id="ls${i}"><div class="lstep-dot"></div>${s}</div>`).join('');
+  q('loader-fill').style.width = '0%';
+  q('loader').classList.add('show');
+}
+function lstep(i, done=false) {
+  document.querySelectorAll('.lstep').forEach((el,j) => {
+    el.className = 'lstep';
+    if (j < i) el.classList.add('done');
+    if (j === i) el.classList.add(done ? 'done' : 'active');
+  });
+  const tot = document.querySelectorAll('.lstep').length;
+  q('loader-fill').style.width = `${((i+(done?1:0))/tot)*100}%`;
+}
+function endLoading() { q('loader').classList.remove('show'); }
+function closeModal()  { q('modal').classList.remove('show'); }
+
+// ── MONTHS ────────────────────────────────────────────────────────────────
+function buildMonths() {
+  const sel = q('month-sel'), now = new Date(); G.months = [];
+  for (let i = 1; i <= 12; i++) {
+    const d     = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const since = new Date(d.getFullYear(), d.getMonth(), 1);
+    const until = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    G.months.push({
+      label: since.toLocaleDateString('en-GB', {month:'long', year:'numeric'}),
+      since: Math.floor(since/1000),
+      until: Math.floor(until/1000),
+    });
+  }
+  sel.innerHTML = G.months.map((m,i) => `<option value="${i}">${m.label}</option>`).join('');
+  onMonthChange();
+}
+function onMonthChange() {
+  q('kpi-period').textContent = G.months[+q('month-sel').value]?.label || '';
+}
+
+// ── FB SDK ────────────────────────────────────────────────────────────────
+function initSDK() {
+  const id = q('appId').value.trim();
+  if (!/^\d{10,20}$/.test(id)) { showErr('setup-err','Please enter a valid Meta App ID (numbers only).'); return; }
+  G.appId  = id;
+  G.agency = q('agencyName').value.trim() || 'kajgod.';
+  loading('Initialising Meta SDK…', ['Loading Facebook SDK','Verifying App','Ready to connect']);
+  lstep(0);
+  window.fbAsyncInit = function() {
+    FB.init({ appId: G.appId, cookie: true, xfbml: false, version: 'v19.0' });
+    lstep(1,true); lstep(2);
+    setTimeout(() => { lstep(2,true); endLoading(); screen('login'); }, 500);
+  };
+  (function(d,s,id){
+    if (d.getElementById(id)) { fbAsyncInit(); return; }
+    const js = d.createElement(s); js.id = id;
+    js.src = 'https://connect.facebook.net/en_US/sdk.js';
+    d.head.appendChild(js);
+  }(document,'script','fb-sdk'));
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+function doLogin() {
+  FB.login(r => {
+    if (r.authResponse) { G.token = r.authResponse.accessToken; onLoggedIn(); }
+    else showErr('login-err','Login cancelled. Please try again.');
+  }, { scope:'pages_show_list,read_insights,pages_read_engagement,instagram_basic,instagram_manage_insights', return_scopes:true });
+}
+function logout() {
+  FB.logout(() => {
+    G.token=null; G.pages=[]; G.igMap={}; G.selected.clear(); G.metrics={};
+    setStatus(false); screen('login');
+  });
+}
+function setStatus(on) {
+  q('s-dot').className   = 'dot' + (on?' on':'');
+  q('s-label').textContent = on ? 'Connected' : 'Not connected';
+  q('btn-out').style.display = on ? 'block' : 'none';
+}
+
+// ── API ───────────────────────────────────────────────────────────────────
+const api = path => new Promise((res,rej) => {
+  FB.api(path, r => { if(!r||r.error) rej(new Error(r?.error?.message||'API error')); else res(r); });
+});
+
+// ── LOAD ACCOUNTS ─────────────────────────────────────────────────────────
+async function onLoggedIn() {
+  loading('Loading accounts…', ['Verifying access','Fetching pages','Checking Instagram']);
+  lstep(0);
+  try {
+    await api('/me?fields=name');
+    lstep(0,true); lstep(1);
+    const pr = await api('/me/accounts?fields=id,name,picture,category,access_token&limit=50');
+    G.pages = pr.data || [];
+    lstep(1,true); lstep(2);
+    for (const p of G.pages) {
+      try {
+        const r = await api(`/${p.id}?fields=instagram_business_account&access_token=${p.access_token}`);
+        if (r.instagram_business_account) G.igMap[p.id] = r.instagram_business_account.id;
+      } catch(e) {}
+    }
+    lstep(2,true); endLoading();
+    setStatus(true); screen('dash'); buildMonths(); renderPills();
+  } catch(err) { endLoading(); showErr('login-err',`Error: ${err.message}`); }
+}
+function reloadAccounts() { onLoggedIn(); }
+
+function renderPills() {
+  const c = q('pills');
+  if (!G.pages.length) { c.innerHTML='<span style="color:var(--muted)">No pages found. Check that you granted page permissions.</span>'; return; }
+  c.innerHTML = G.pages.map(p => {
+    const pic = p.picture?.data?.url || '';
+    const on  = G.selected.has(p.id);
+    return `<div class="pill${on?' active':''}" onclick="togglePill('${p.id}')">
+      ${pic ? `<img src="${pic}" alt=""/>` : '<div class="pill-avatar"></div>'}
+      <div>
+        <div style="font-size:12px;font-weight:600">${p.name}</div>
+        <div class="pill-plat">FB${G.igMap[p.id]?' + IG':''}</div>
       </div>
     </div>`;
+  }).join('');
+}
+function togglePill(id) {
+  G.selected.has(id) ? G.selected.delete(id) : G.selected.add(id);
+  renderPills();
+}
 
-  // Draw charts
-  setTimeout(() => {
-    platArr.forEach(p => {
-      const ctx = document.getElementById(`chart-${p}`);
-      if (!ctx) return;
-      const cfg = PLATFORM_CONFIG[p];
-      const days = Array.from({length: 28}, (_, i) => `Feb ${i+1}`);
-      const vals = Array.from({length: 28}, () => Math.floor(Math.random() * 3000 + 500));
+// ── DEMO DATA ─────────────────────────────────────────────────────────────
+const rnd  = (a,b) => Math.floor(Math.random()*(b-a)+a);
+function getDays(since,until) {
+  const d=[]; let t=since;
+  while(t<=until){ d.push(new Date(t*1000).toISOString().split('T')[0]); t+=86400; }
+  return d;
+}
+function demoFB(since,until) {
+  const days = getDays(since,until);
+  return {
+    totals:{ page_reach:rnd(5000,40000), page_impressions:rnd(10000,80000), page_engaged_users:rnd(1000,8000), page_post_engagements:rnd(800,6000), page_fan_adds:rnd(20,500), page_views_total:rnd(2000,12000), page_video_views:rnd(500,5000) },
+    daily:{ page_reach: days.map(d=>({end_time:d,value:rnd(100,2000)})), page_fan_adds: days.map(d=>({end_time:d,value:rnd(0,30)})) },
+    _demo:true
+  };
+}
+function demoIG(since,until) {
+  const days = getDays(since,until);
+  return {
+    totals:{ reach:rnd(8000,60000), impressions:rnd(15000,120000), profile_views:rnd(2000,10000), website_clicks:rnd(200,3000), follower_count:rnd(50,600) },
+    daily:{ reach: days.map(d=>({end_time:d,value:rnd(200,3000)})), follower_count: days.map(d=>({end_time:d,value:rnd(0,25)})) },
+    _demo:true
+  };
+}
 
-      // Override with real data if available
-      if (state.data[p]?.views?.length > 1) {
-        const rows = state.data[p].views.slice(1);
-        const col = state.data[p].views[0].findIndex(h => h && h.toString().toLowerCase().includes('view'));
-        vals.splice(0, Math.min(rows.length, 28), ...rows.slice(0, 28).map(r => parseFloat(r[col > -1 ? col : 1]) || 0));
+// ── FETCH INSIGHTS ────────────────────────────────────────────────────────
+const FB_M = ['page_impressions','page_reach','page_engaged_users','page_post_engagements','page_fan_adds','page_fan_removes','page_views_total','page_video_views'];
+const IG_M = ['reach','impressions','profile_views','website_clicks'];
+
+async function fetchFB(page, since, until) {
+  try {
+    const r = await api(`/${page.id}/insights?metric=${FB_M.join(',')}&period=day&since=${since}&until=${until}&access_token=${page.access_token}`);
+    const res = { totals:{}, daily:{} };
+    for (const item of (r.data||[])) {
+      res.daily[item.name]  = item.values||[];
+      res.totals[item.name] = (item.values||[]).reduce((s,v)=>s+(v.value||0),0);
+    }
+    return res;
+  } catch(e) { return demoFB(since,until); }
+}
+async function fetchIG(igId, token, since, until) {
+  try {
+    const r = await api(`/${igId}/insights?metric=${IG_M.join(',')}&period=day&since=${since}&until=${until}&access_token=${token}`);
+    const res = { totals:{}, daily:{} };
+    for (const item of (r.data||[])) {
+      res.daily[item.name]  = item.values||[];
+      res.totals[item.name] = (item.values||[]).reduce((s,v)=>s+(v.value||0),0);
+    }
+    try {
+      const fr = await api(`/${igId}/insights?metric=follower_count&period=day&since=${since}&until=${until}&access_token=${token}`);
+      const fd = fr.data?.[0]?.values||[];
+      res.daily.follower_count = fd;
+      res.totals.follower_count = fd.reduce((s,v)=>s+(v.value||0),0);
+    } catch(e) {}
+    return res;
+  } catch(e) { return demoIG(since,until); }
+}
+
+// ── GENERATE ─────────────────────────────────────────────────────────────
+async function generateReport() {
+  if (!G.selected.size) { toast('Select at least one account first.','err'); return; }
+  const mi = +q('month-sel').value;
+  const mo = G.months[mi];
+  const steps = [
+    ...[...G.selected].flatMap(id => {
+      const p = G.pages.find(x=>x.id===id);
+      return [p.name+' (Facebook)', ...(G.igMap[id] ? [p.name+' (Instagram)'] : [])];
+    }),
+    'Building report'
+  ];
+  loading(`Pulling ${mo.label}…`, steps);
+  G.metrics = {}; let si = 0;
+  try {
+    for (const pid of G.selected) {
+      const pg = G.pages.find(p=>p.id===pid);
+      lstep(si);
+      const fb = await fetchFB(pg, mo.since, mo.until);
+      G.metrics[pid] = { fb, pageName:pg.name, pageObj:pg };
+      lstep(si++, true);
+      if (G.igMap[pid]) {
+        lstep(si);
+        G.metrics[pid].ig = await fetchIG(G.igMap[pid], pg.access_token, mo.since, mo.until);
+        lstep(si++, true);
       }
-
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: days,
-          datasets: [{
-            data: vals,
-            backgroundColor: cfg.color + '40',
-            borderColor: cfg.color,
-            borderWidth: 1.5,
-            borderRadius: 4,
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { maxTicksLimit: 7, font: { size: 10 } }, grid: { display: false } },
-            y: { ticks: { font: { size: 10 } }, grid: { color: '#F0F0F0' } }
-          }
-        }
-      });
-    });
-  }, 100);
+    }
+    lstep(si); renderKPIs(mo); renderCharts(); lstep(si, true);
+    endLoading(); toast('Report ready!','ok');
+    buildReport(mo); q('modal').classList.add('show');
+  } catch(e) { endLoading(); toast(`Error: ${e.message}`,'err'); }
 }
 
-// ── PDF DOWNLOAD ──────────────────────────────────────────────────────────────
-function downloadPDF() {
-  showToast('Preparing PDF...');
-  window.print();
+// ── RENDER KPIs ───────────────────────────────────────────────────────────
+function renderKPIs(mo) {
+  let html = '';
+  for (const pid of G.selected) {
+    const m = G.metrics[pid]; if (!m) continue;
+    const f = m.fb?.totals||{}, g = m.ig?.totals||{};
+    const isDemo = m.fb?._demo || m.ig?._demo;
+    const fbCards = [
+      ['FB Reach',        fmt(f.page_reach||0),        'fb'],
+      ['FB Engaged Users',fmt(f.page_engaged_users||0),'fb'],
+      ['FB Page Views',   fmt(f.page_views_total||0),  'fb'],
+      ['FB New Followers',fmt(f.page_fan_adds||0),     'fb'],
+    ];
+    const igCards = m.ig ? [
+      ['IG Reach',        fmt(g.reach||0),          'ig'],
+      ['IG Impressions',  fmt(g.impressions||0),    'ig'],
+      ['IG Profile Views',fmt(g.profile_views||0),  'ig'],
+      ['IG Link Clicks',  fmt(g.website_clicks||0), 'ig'],
+    ] : [];
+    for (const [lbl,val,plat] of [...fbCards,...igCards]) {
+      html += `<div class="kpi-card ${plat}">
+        <div class="kpi-plat ${plat}">${plat==='fb'?'📘 Facebook':'📸 Instagram'}</div>
+        <div class="kpi-value">${val}</div>
+        <div class="kpi-label">${lbl}</div>
+        ${isDemo ? '<span class="kpi-demo">demo data</span>' : ''}
+      </div>`;
+    }
+  }
+  q('kpi-strip').innerHTML = html || '<div style="color:var(--muted);padding:20px">No data available.</div>';
+  q('kpi-period').textContent = mo.label;
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
-// Pre-select all platforms by default
-['fb', 'ig', 'li'].forEach(p => {
-  state.platforms.add(p);
-  document.getElementById(`btn-${p}`).className = `plat-btn active-${p}`;
-});
+// ── RENDER CHARTS ─────────────────────────────────────────────────────────
+function renderCharts() {
+  q('chart-grid').style.display = 'grid';
+  Object.values(G.charts).forEach(c => c.destroy()); G.charts = {};
+  const pg = [...G.selected].map(id => ({id, ...G.metrics[id]}));
+  if (!pg.length) return;
+  const p = pg[0];
+  const f = p.fb?.totals||{};
+  const fbDays = p.fb?.daily?.page_reach||[];
+  const igDays = p.ig?.daily?.reach||[];
+  const lbl = (fbDays.length?fbDays:igDays).map(v => {
+    const d = new Date(v.end_time); return `${d.getDate()}/${d.getMonth()+1}`;
+  });
+  const cOpts = {
+    responsive:true,
+    plugins:{ legend:{ display:false } },
+    scales:{
+      x:{ ticks:{color:'#888',font:{size:10},maxTicksLimit:8}, grid:{display:false} },
+      y:{ ticks:{color:'#888',font:{size:10}}, grid:{color:'#E8E8E0'} }
+    }
+  };
+  G.charts.reach = new Chart(q('c-reach'), { type:'line', data:{ labels:lbl, datasets:[
+    {label:'Facebook', data:fbDays.map(v=>v.value), borderColor:'#1877F2', backgroundColor:'#1877F210', tension:.4, fill:true, pointRadius:0, borderWidth:2},
+    {label:'Instagram',data:igDays.map(v=>v.value), borderColor:'#DD2A7B', backgroundColor:'#DD2A7B10', tension:.4, fill:true, pointRadius:0, borderWidth:2},
+  ]}, options:{...cOpts, plugins:{legend:{display:true, labels:{color:'#666',font:{size:11}}}}} });
+
+  G.charts.bd = new Chart(q('c-breakdown'), { type:'doughnut', data:{
+    labels:['Engagements','Page Views','Video Views','Reach'],
+    datasets:[{ data:[f.page_post_engagements||0,f.page_views_total||0,f.page_video_views||0,f.page_reach||0], backgroundColor:['#1877F2','#FFE600','#00C896','#DD2A7B'], borderWidth:0, hoverOffset:6 }]
+  }, options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{ color:'#666',font:{size:11},padding:12 } } }, cutout:'62%' } });
+
+  const flbl = (p.fb?.daily?.page_fan_adds||[]).map(v => {
+    const d = new Date(v.end_time); return `${d.getDate()}/${d.getMonth()+1}`;
+  });
+  G.charts.follows = new Chart(q('c-follows'), { type:'bar', data:{ labels:flbl, datasets:[
+    {label:'Facebook', data:(p.fb?.daily?.page_fan_adds||[]).map(v=>v.value), backgroundColor:'#1877F230', borderColor:'#1877F2', borderWidth:2, borderRadius:4},
+    {label:'Instagram',data:(p.ig?.daily?.follower_count||[]).map(v=>v.value), backgroundColor:'#DD2A7B20', borderColor:'#DD2A7B', borderWidth:2, borderRadius:4},
+  ]}, options:{...cOpts, plugins:{legend:{display:true,labels:{color:'#666',font:{size:11}}}}} });
+}
+
+// ── BUILD REPORT HTML ─────────────────────────────────────────────────────
+function buildReport(mo) {
+  const pages = [...G.selected].map(id => {
+    const pg = G.pages.find(p=>p.id===id);
+    return { pg, ...G.metrics[id] };
+  });
+  const clientName = pages[0]?.pg?.name || 'Client';
+  const hasFB = pages.some(p=>p.fb);
+  const hasIG = pages.some(p=>p.ig);
+
+  let sections = '';
+  for (const {pg, fb, ig} of pages) {
+    const f    = fb?.totals||{};
+    const g    = ig?.totals||{};
+    const demo = fb?._demo || ig?._demo;
+    const dw   = demo ? `<div class="demo-warn">⚠ Demo data — real metrics load once your Meta App is approved by Meta.</div>` : '';
+
+    if (hasFB) sections += `
+      <div class="rep-h1" style="border-left:3px solid #1877F2">📘 Facebook — ${pg.name}</div>
+      ${dw}
+      <div class="rep-kpi-grid">
+        ${[['Reach',f.page_reach||0],['Impressions',f.page_impressions||0],['Engaged Users',f.page_engaged_users||0],['Post Engagements',f.page_post_engagements||0],['New Followers',f.page_fan_adds||0],['Page Views',f.page_views_total||0]]
+          .map(([l,v]) => `<div class="rep-kpi fb"><div class="rep-kpi-plat">Facebook</div><div class="rep-kpi-val">${fmt(v)}</div><div class="rep-kpi-lbl">${l}</div></div>`).join('')}
+      </div>`;
+
+    if (ig) sections += `
+      <div class="rep-h1" style="border-left:3px solid #DD2A7B">📸 Instagram — ${pg.name}</div>
+      ${dw}
+      <div class="rep-kpi-grid">
+        ${[['Reach',g.reach||0],['Impressions',g.impressions||0],['Profile Views',g.profile_views||0],['Website Clicks',g.website_clicks||0],['New Followers',g.follower_count||0]]
+          .map(([l,v]) => `<div class="rep-kpi ig"><div class="rep-kpi-plat">Instagram</div><div class="rep-kpi-val">${fmt(v)}</div><div class="rep-kpi-lbl">${l}</div></div>`).join('')}
+      </div>`;
+  }
+
+  const platTags = [
+    hasFB ? `<span class="rep-plat-tag" style="background:#EBF3FF;color:#1877F2;border-color:#1877F2">📘 Facebook</span>` : '',
+    hasIG ? `<span class="rep-plat-tag" style="background:#FFF0F5;color:#DD2A7B;border-color:#DD2A7B">📸 Instagram</span>` : '',
+  ].filter(Boolean).join('');
+
+  const insights = [
+    { i:'📈', t:'Reach vs Impressions',      b:'Reach counts unique accounts; impressions count total views. A high impressions-to-reach ratio means your content is shown multiple times — effective for brand recall and top-of-mind awareness.' },
+    { i:'💬', t:'Engagement Rate Benchmarks', b:'Target 3–6% engagement rate on Facebook and 1–5% on Instagram. Carousel posts and Reels consistently outperform static images for organic reach and algorithmic distribution.' },
+    { i:'👥', t:'Follower Growth Quality',    b:'Organic growth signals content-audience alignment. Watch the follows-to-unfollows ratio — a rising unfollow rate is an early warning of content-audience mismatch.' },
+    { i:'🔗', t:'Converting Reach to Action', b:'Profile visits and link clicks are the bridge from social to business outcomes. Keep bio links updated and place CTAs in the first line of captions for maximum visibility.' },
+    { i:'⏰', t:'Timing & Posting Cadence',   b:'Post when your audience is active — check audience insights for peak hours. Consistency (3–5 posts/week) outperforms sporadic high-volume bursts for sustained algorithmic reach.' },
+  ];
+
+  q('report-html').innerHTML = `
+    <div class="rep-cover" style="background:var(--white)">
+      <div class="rep-cover-noise"></div>
+      <div class="rep-cover-tri"></div>
+      <div class="rep-eyebrow" style="color:var(--muted)">
+        <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #FFE600"></div>
+        ${G.agency}
+      </div>
+      <div class="rep-cover-title" style="color:var(--ink)">Social Media<br>Monthly Report</div>
+      <div class="rep-cover-client" style="color:var(--muted)">Prepared for: <strong style="color:var(--ink)">${clientName}</strong></div>
+      <div class="rep-cover-period" style="color:var(--muted)">${mo.label}</div>
+      <div class="rep-plat-tags">${platTags}</div>
+    </div>
+    <div class="rep-divider"></div>
+    <div class="rep-body">
+      <div class="rep-h1" style="border-left:3px solid #FFE600">Executive Summary</div>
+      <div class="rep-summary">
+        This report covers social media performance for <strong>${clientName}</strong> during <strong>${mo.label}</strong>,
+        across ${[hasFB&&'Facebook',hasIG&&'Instagram'].filter(Boolean).join(' and ')}.
+        All data is sourced live from the Meta Graph API and reflects both organic and paid activity.
+      </div>
+      ${sections}
+      <div class="rep-h1" style="border-left:3px solid #FFE600;margin-top:36px">Insights & Recommendations</div>
+      ${insights.map(({i,t,b}) => `
+        <div class="rep-insight">
+          <div class="rep-insight-left">${i}</div>
+          <div>
+            <div class="rep-insight-title">${t}</div>
+            <div class="rep-insight-body">${b}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="rep-footer">
+      <div class="rep-footer-note">Via Meta Graph API · ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      <div class="rep-footer-brand">${G.agency}<span>.</span></div>
+    </div>`;
+}
 </script>
 </body>
 </html>
