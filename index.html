@@ -463,47 +463,12 @@ header {
   </div>
 </header>
 
-<!-- ─── SCREEN: SETUP ──────────────────────────────────────────── -->
-<div class="screen active" id="screen-setup">
-  <div class="setup-wrap">
-    <div class="setup-eyebrow"><div class="tri tri-accent"></div> Meta Report Generator</div>
-    <div class="setup-title">Connect your<br><span>Meta</span> account.</div>
-    <div class="setup-sub">Enter your Meta App ID to pull live data from Facebook & Instagram. Everything runs in your browser — nothing is stored anywhere.</div>
-
-    <div class="box">
-      <div class="field">
-        <label>Meta App ID</label>
-        <input id="appId" type="text" placeholder="e.g. 1234567890123456"/>
-        <div class="hint">
-          Get your App ID at <a href="https://developers.facebook.com/apps" target="_blank">developers.facebook.com/apps</a>.
-          Add <code>Facebook Login</code> and set your site URL as the OAuth redirect URI.
-        </div>
-      </div>
-      <div class="field">
-        <label>Agency Name</label>
-        <input id="agencyName" type="text" value="kajgod." placeholder="kajgod."/>
-      </div>
-      <button class="btn btn-yellow btn-full" onclick="initSDK()" style="margin-top:8px">
-        Connect & Continue →
-      </button>
-      <div id="setup-err" class="err-box"></div>
-    </div>
-
-    <div class="guide">
-      <div class="guide-item"><div class="guide-n">1</div><div class="guide-t"><strong>Create a Meta App</strong> at developers.facebook.com → My Apps → Create App → Business type.</div></div>
-      <div class="guide-item"><div class="guide-n">2</div><div class="guide-t"><strong>Add Facebook Login</strong>, set Valid OAuth Redirect URIs to your GitHub Pages URL.</div></div>
-      <div class="guide-item"><div class="guide-n">3</div><div class="guide-t"><strong>Request permissions:</strong> <code>pages_show_list</code>, <code>read_insights</code>, <code>pages_read_engagement</code>, <code>instagram_basic</code>, <code>instagram_manage_insights</code>.</div></div>
-      <div class="guide-item"><div class="guide-n">4</div><div class="guide-t"><strong>Paste your App ID above.</strong> Client logs in once — the app pulls data automatically every month.</div></div>
-    </div>
-  </div>
-</div>
-
 <!-- ─── SCREEN: LOGIN ──────────────────────────────────────────── -->
-<div class="screen" id="screen-login">
+<div class="screen active" id="screen-login">
   <div class="setup-wrap">
-    <div class="setup-eyebrow"><div class="tri tri-accent"></div> Step 2 of 2</div>
+    <div class="setup-eyebrow"><div class="tri tri-accent"></div> kajgod. Report Generator</div>
     <div class="setup-title">Login with<br><span>Facebook</span>.</div>
-    <div class="setup-sub">Log in with the Facebook account that manages the pages you want to report on. Read-only access only.</div>
+    <div class="setup-sub">Log in with the kajgod. Facebook account to access your clients' pages and generate monthly reports.</div>
     <div class="box">
       <button class="btn btn-fb" onclick="doLogin()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.971h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
@@ -606,7 +571,7 @@ header {
 <script>
 // ── STATE ─────────────────────────────────────────────────────────────────
 const G = {
-  appId:'', agency:'kajgod.', token:null,
+  appId:'4512281079052954', agency:'kajgod.', token:null,
   pages:[], igMap:{}, selected:new Set(),
   metrics:{}, charts:{}, months:[]
 };
@@ -668,26 +633,16 @@ function onMonthChange() {
   q('kpi-period').textContent = G.months[+q('month-sel').value]?.label || '';
 }
 
-// ── FB SDK ────────────────────────────────────────────────────────────────
-function initSDK() {
-  const id = q('appId').value.trim();
-  if (!/^\d{10,20}$/.test(id)) { showErr('setup-err','Please enter a valid Meta App ID (numbers only).'); return; }
-  G.appId  = id;
-  G.agency = q('agencyName').value.trim() || 'kajgod.';
-  loading('Initialising Meta SDK…', ['Loading Facebook SDK','Verifying App','Ready to connect']);
-  lstep(0);
-  window.fbAsyncInit = function() {
-    FB.init({ appId: G.appId, cookie: true, xfbml: false, version: 'v19.0' });
-    lstep(1,true); lstep(2);
-    setTimeout(() => { lstep(2,true); endLoading(); screen('login'); }, 500);
-  };
-  (function(d,s,id){
-    if (d.getElementById(id)) { fbAsyncInit(); return; }
-    const js = d.createElement(s); js.id = id;
-    js.src = 'https://connect.facebook.net/en_US/sdk.js';
-    d.head.appendChild(js);
-  }(document,'script','fb-sdk'));
-}
+// ── FB SDK AUTO-BOOT ──────────────────────────────────────────────────────
+window.fbAsyncInit = function() {
+  FB.init({ appId: G.appId, cookie: true, xfbml: false, version: 'v19.0' });
+};
+(function(d,s,id){
+  if (d.getElementById(id)) return;
+  const js = d.createElement(s); js.id = id;
+  js.src = 'https://connect.facebook.net/en_US/sdk.js';
+  d.head.appendChild(js);
+}(document,'script','fb-sdk'));
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
 function doLogin() {
